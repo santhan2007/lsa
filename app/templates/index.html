@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linux Security Auditor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+
+<body>
+
+<div class="sidebar">
+    <div class="brand">
+        <div class="brand-mark">🛡️</div>
+        <div>
+            <h2>LSA</h2>
+            <p>Linux Security Auditor</p>
+        </div>
+    </div>
+
+    <nav>
+        <a class="active" data-view="overview" onclick="showView('overview')">◉ Overview</a>
+        <a data-view="audit" onclick="showView('audit')">🧭 Audit Center</a>
+        <a data-view="network" onclick="showView('network')">🌐 Network</a>
+        <a data-view="processes" onclick="showView('processes')">⚙ Processes</a>
+        <a data-view="system" onclick="showView('system')">🖥 System</a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <button class="btn btn-primary btn-block" onclick="runFullAudit()">⚡ Run Full Audit</button>
+        <button class="btn btn-ghost btn-block" onclick="downloadReport()">⬇ Download Report</button>
+        <div class="scan-state" id="scan-state">Last scan: never</div>
+    </div>
+</div>
+
+<main>
+    <!-- ======================= OVERVIEW ======================= -->
+    <section class="view active" id="view-overview">
+        <header>
+            <div>
+                <h1>Security Overview</h1>
+                <p id="overview-subtitle">Live status of your Linux system</p>
+            </div>
+            <button class="btn btn-primary" onclick="runFullAudit()">↻ Refresh Scan</button>
+        </header>
+
+        <section class="cards">
+            <div class="card clickable-card" onclick="showView('system')">
+                <span class="card-label">CPU</span>
+                <strong id="cpu">--</strong>
+                <div class="meter"><div class="meter-fill" id="cpu-meter"></div></div>
+            </div>
+
+            <div class="card clickable-card" onclick="showView('system')">
+                <span class="card-label">Memory</span>
+                <strong id="ram">--</strong>
+                <div class="meter"><div class="meter-fill" id="ram-meter"></div></div>
+        </div>
+
+            <div class="card clickable-card" onclick="showView('system')">
+                <span class="card-label">Disk</span>
+                <strong id="disk">--</strong>
+                <div class="meter"><div class="meter-fill" id="disk-meter"></div></div>
+            </div>
+
+            <div class="card clickable-card" onclick="showPorts()">
+                <span class="card-label">Open Ports</span>
+                <strong id="ports">--</strong>
+                <small id="ports-note">Listening</small>
+            </div>
+
+            <div class="card clickable-card" onclick="showView('audit')">
+                <span class="card-label">Audit Findings</span>
+                <strong id="finding-count">--</strong>
+                <small id="finding-note">Click to review</small>
+            </div>
+</section>
+
+        <div class="overview-grid">
+            <section class="panel score-panel clickable-card" onclick="showView('audit')">
+                <div class="score-header">
+                    <div>
+                        <h2>Security Score</h2>
+                        <p>Based on the latest audit</p>
+                    </div>
+                    <div class="score-value">
+                        <strong id="score">--</strong>
+                        <span id="rating">SCANNING</span>
+                    </div>
+                </div>
+
+                <div class="gauge">
+                    <div class="gauge-fill" id="gauge-fill"></div>
+                </div>
+
+                <div class="score-summary">
+                    <span class="pass-count"><strong id="pass-count">0</strong> PASS</span>
+                    <span class="warning-count"><strong id="warning-count">0</strong> WARNING</span>
+                    <span class="critical-count"><strong id="critical-count">0</strong> CRITICAL</span>
+                </div>
+            </section>
+
+            <section class="panel clickable-card" onclick="showView('system')">
+                <h2>System Information</h2>
+                <div class="info-grid">
+                    <div><span>Hostname</span><strong id="hostname">--</strong></div>
+                    <div><span>Operating System</span><strong id="os">--</strong></div>
+                    <div><span>Kernel</span><strong id="kernel">--</strong></div>
+                    <div><span>Architecture</span><strong id="architecture">--</strong></div>
+                </div>
+            </section>
+        </div>
+
+        <section class="panel">
+            <h2>Top Findings</h2>
+            <p class="panel-sub">Worst results from the latest audit — fix these first</p>
+            <div id="top-findings"></div>
+        </section>
+    </section>
+
+    <!-- ======================= AUDIT CENTER ======================= -->
+    <section class="view" id="view-audit">
+        <header>
+            <div>
+                <h1>Audit Center</h1>
+                <p>Every scanner in one place — review, filter, drill in</p>
+            </div>
+            <div class="header-actions">
+                <input id="audit-filter" class="text-input" type="text" placeholder="Search checks…" oninput="renderAuditCenter()">
+                <button class="btn btn-primary" onclick="runFullAudit()">↻ Run Full Audit</button>
+            </div>
+        </header>
+
+        <div class="chip-row" id="status-filter">
+            <button class="chip active" data-status="ALL" onclick="filterAudit('ALL', this)">All</button>
+            <button class="chip" data-status="PASS" onclick="filterAudit('PASS', this)">✓ Pass</button>
+            <button class="chip" data-status="WARNING" onclick="filterAudit('WARNING', this)">⚠ Warnings</button>
+            <button class="chip" data-status="CRITICAL" onclick="filterAudit('CRITICAL', this)">✕ Critical</button>
+            <button class="chip" data-status="INFO" onclick="filterAudit('INFO', this)">ℹ Info</button>
+        </div>
+
+        <section class="audit-grid" id="audit-grid"></section>
+        <div id="audit-empty" class="empty-state hidden">No checks match this filter.</div>
+    </section>
+
+    <!-- ======================= NETWORK ======================= -->
+    <section class="view" id="view-network">
+        <header>
+            <div>
+                <h1>Network</h1>
+                <p>Listening ports and their exposure to other machines</p>
+            </div>
+            <button class="btn btn-ghost" onclick="loadNetwork()">↻ Refresh</button>
+        </header>
+
+        <section class="cards">
+            <div class="card">
+                <span class="card-label">Listening</span>
+                <strong id="net-listening">--</strong>
+                <small>ports on this system</small>
+            </div>
+            <div class="card">
+                <span class="card-label">Exposed</span>
+                <strong id="net-exposed" class="text-danger">--</strong>
+                <small>reachable externally</small>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>Listening Ports</h2>
+            <div id="network-table"></div>
+        </section>
+    </section>
+
+    <!-- ======================= PROCESSES ======================= -->
+    <section class="view" id="view-processes">
+        <header>
+            <div>
+                <h1>Processes</h1>
+                <p>Deep inventory — every kernel thread, system service and user app</p>
+            </div>
+            <button class="btn btn-ghost" onclick="loadProcessesView()">↻ Refresh</button>
+        </header>
+
+        <section class="cards">
+            <div class="card">
+                <span class="card-label">Total</span>
+                <strong id="proc-total">--</strong>
+                <small>processes on this system</small>
+            </div>
+            <div class="card">
+                <span class="card-label">Kernel Threads</span>
+                <strong id="proc-kernel" class="kind-kernel-text">--</strong>
+                <small>inside the kernel (kthreadd tree)</small>
+            </div>
+            <div class="card">
+                <span class="card-label">System Services</span>
+                <strong id="proc-system" class="kind-system-text">--</strong>
+                <small>daemons & OS services</small>
+            </div>
+            <div class="card">
+                <span class="card-label">User Apps</span>
+                <strong id="proc-user" class="kind-user-text">--</strong>
+                <small>launched by logged-in users</small>
+            </div>
+            <div class="card">
+                <span class="card-label">Root-run</span>
+                <strong id="proc-root" class="text-warn">--</strong>
+                <small>privileged user-space processes</small>
+            </div>
+        </section>
+
+        <div class="two-col">
+            <section class="panel">
+                <h2>Top Memory Consumers</h2>
+                <p class="panel-sub">Largest RSS footprint (all process types)</p>
+                <div id="proc-mem-table"></div>
+            </section>
+            <section class="panel">
+                <h2>Top CPU Consumers</h2>
+                <p class="panel-sub">Highest CPU right now (all process types)</p>
+                <div id="proc-cpu-table"></div>
+            </section>
+        </div>
+
+        <section class="panel">
+            <div class="panel-head">
+                <div>
+                    <h2>All Processes</h2>
+                    <p class="panel-sub">Complete inventory — including OS &amp; kernel-level processes <span class="kind kind-KERNEL">KERNEL</span> <span class="kind kind-SYSTEM">SYSTEM</span> <span class="kind kind-USER">USER</span></p>
+                </div>
+                <div class="panel-controls">
+                    <input id="proc-filter" class="text-input text-input-sm" type="text"
+                           placeholder="Search name, user, command…" oninput="renderAllProcesses()">
+                    <select id="proc-kind" class="text-input text-input-sm select-sm" onchange="renderAllProcesses()">
+                        <option value="ALL">All types</option>
+                        <option value="KERNEL">Kernel threads</option>
+                        <option value="SYSTEM">System services</option>
+                        <option value="USER">User apps</option>
+                    </select>
+                    <select id="proc-sort" class="text-input text-input-sm select-sm" onchange="renderAllProcesses()">
+                        <option value="rss">Sort: Memory</option>
+                        <option value="cpu">Sort: CPU</option>
+                        <option value="pid">Sort: PID</option>
+                        <option value="name">Sort: Name</option>
+                    </select>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table class="table proc-table">
+                    <thead>
+                        <tr><th>Type</th><th>PID</th><th>Name</th><th>User</th><th>State</th><th>CPU</th><th>Memory</th><th>Started</th></tr>
+                    </thead>
+                    <tbody id="proc-all-body"></tbody>
+                </table>
+            </div>
+            <div class="table-foot">
+                <span id="proc-shown-note" class="process-note"></span>
+                <button class="btn btn-ghost btn-sm" id="proc-more-btn" onclick="showMoreProcesses()">Show more</button>
+            </div>
+        </section>
+    </section>
+
+    <!-- ======================= SYSTEM ======================= -->
+    <section class="view" id="view-system">
+        <header>
+            <div>
+                <h1>System</h1>
+                <p>Hardware and OS information for the audited machine</p>
+            </div>
+            <button class="btn btn-ghost" onclick="loadSystemView()">↻ Refresh</button>
+        </header>
+
+        <section class="cards">
+            <div class="card">
+                <span class="card-label">CPU Usage</span>
+                <strong id="sys-cpu">--</strong>
+                <div class="meter"><div class="meter-fill" id="sys-cpu-meter"></div></div>
+        </div>
+            <div class="card">
+                <span class="card-label">Memory Usage</span>
+                <strong id="sys-ram">--</strong>
+                <div class="meter"><div class="meter-fill" id="sys-ram-meter"></div></div>
+            </div>
+            <div class="card">
+                <span class="card-label">Disk Usage</span>
+                <strong id="sys-disk">--</strong>
+                <div class="meter"><div class="meter-fill" id="sys-disk-meter"></div></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <h2>System Information</h2>
+            <div id="system-details"></div>
+        </section>
+    </section>
+</main>
+
+<!-- Full Audit Progress Overlay -->
+<div id="audit-overlay" class="modal hidden">
+    <div class="modal-content audit-overlay-box">
+        <div class="audit-spinner"></div>
+        <h2 id="audit-progress-title">Running full audit…</h2>
+        <p class="modal-sub" id="audit-progress-step">Collecting system information</p>
+        <div class="progress"><div class="progress-fill" id="audit-progress-fill"></div></div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div id="details-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div>
+                <h2 id="details-title">Details</h2>
+                <p id="details-subtitle">System information</p>
+            </div>
+            <button class="close-button" onclick="closeDetails()">×</button>
+        </div>
+        <div id="details-content"></div>
+    </div>
+</div>
+
+<!-- Port Details Modal -->
+<div id="ports-modal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div>
+                <h2>Network Security</h2>
+                <p>Listening ports detected on your system</p>
+            </div>
+            <button class="close-button" onclick="closePorts()">×</button>
+        </div>
+        <div class="modal-summary">
+            <strong id="modal-port-count">0</strong>
+            <span>Listening Ports</span>
+        </div>
+        <div id="port-list"></div>
+    </div>
+</div>
+
+<script src="/static/js/dashboard.js"></script>
+
+</body>
+</html>

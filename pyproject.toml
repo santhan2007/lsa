@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linux-security-auditor"
+version = "1.0.0"
+description = "Deep Linux security audit — terminal command plus live web dashboard with security scoring, kernel/system process visibility and downloadable reports."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Linux Security Auditor contributors" }]
+keywords = ["security", "audit", "linux", "hardening", "dashboard", "psutil"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: System Administrators",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+]
+dependencies = [
+    "Flask>=3.0",
+    "psutil>=5.9",
+]
+
+[project.optional-dependencies]
+dev = ["gunicorn"]
+
+[project.scripts]
+lsa = "app.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/YOUR_USERNAME/linux-security-auditor"
+
+[tool.setuptools]
+packages = ["app", "app.scanner"]
+
+[tool.setuptools.package-data]
+app = ["templates/*.html", "static/css/*.css", "static/js/*.js"]
