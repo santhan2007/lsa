@@ -18,7 +18,7 @@ That's it: a security dashboard opens in your browser and your system gets scann
 - **Security score 0–100** with rating and PASS / WARNING / CRITICAL breakdown
 - **Every check explains itself** — what was found, *why it matters*, and the exact fix command
 - **Filterable Audit Center** — search, filter by status, drill into any check
-- **Deep process table** — search / sort / filter 250+ processes, with RSS, state, threads, start time
+- **Deep process table** — search / sort / filter hundreds of processes, with RSS, state, threads, start time
 - **Downloadable JSON report** — from the dashboard or `lsa scan --save report.json`
 - **Zero config** — pure Python + psutil + Flask, no external services
 
@@ -42,6 +42,30 @@ git clone https://github.com/YOUR_USERNAME/linux-security-auditor.git
 cd linux-security-auditor
 pip install -e .
 ```
+
+## 🖼 Screenshots
+
+*Real screenshots from today's run (Sep 14, 2026)*
+
+### Dashboard Overview
+
+![Dashboard Overview](app/static/images/dashboard-overview.png)
+
+### Audit Center
+
+![Audit Center](app/static/images/audit-center.png)
+
+### Process Inventory
+
+![Process Inventory](app/static/images/process-inventory.png)
+
+### Network & Ports
+
+![Network Ports](app/static/images/network-ports.png)
+
+### System Information
+
+![System Info](app/static/images/system-info.png)
 
 ## 🚀 Usage
 
